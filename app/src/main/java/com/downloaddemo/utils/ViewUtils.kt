@@ -4,14 +4,22 @@ import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
+import android.webkit.MimeTypeMap
 import java.util.Formatter
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
+
+/**
+ * this function is used to check device version if it ie above 12
+ * */
 fun isAboveAndroid12(): Boolean {
     return Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2
 }
 
+/**
+ * this function is to get time in milliseconds
+ * */
 fun getTimeFromMillis(timeMs: Int): String {
     try {
         if (timeMs == 0) {
@@ -34,6 +42,9 @@ fun getTimeFromMillis(timeMs: Int): String {
     }
 }
 
+/**
+ * this function will convert h,m&s to milliseconds
+ * */
 fun convertMillieToHMmSs(millie: Long): String? {
     val seconds = millie / 1000
     val second = seconds % 60
@@ -47,8 +58,23 @@ fun convertMillieToHMmSs(millie: Long): String? {
     }
 }
 
-fun getMediaDuration(mContext: Context, uri: String): String {
-    val uri = Uri.parse(uri)
+/**
+ * this function is used to get mime type of file with giving URL
+ * */
+fun getMimeType(url: String?): String? {
+    var type: String? = null
+    val extension = MimeTypeMap.getFileExtensionFromUrl(url)
+    if (extension != null) {
+        type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+    }
+    return type
+}
+
+/**
+ * this function will return duration of media file for given URL
+ * */
+fun getMediaDuration(mContext: Context, url: String): String {
+    val uri = Uri.parse(url)
     var minutes = ""
     var seconds = ""
 

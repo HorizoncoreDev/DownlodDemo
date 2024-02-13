@@ -5,6 +5,9 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
+/**
+ * this db used store downloaded file
+ * */
 @Database(
     entities = [FilesDownloading::class],
     version = 1,
@@ -16,7 +19,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     object DatabaseBuilder {
         private var INSTANCE: AppDatabase? = null
-        private val DB_NAME = "video_db"
+        private val DB_NAME = "file_db"
 
         fun getInstance(context: Context): AppDatabase {
             if (INSTANCE == null) {

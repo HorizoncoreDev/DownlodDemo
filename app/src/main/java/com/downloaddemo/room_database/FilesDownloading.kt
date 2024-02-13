@@ -4,7 +4,10 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "videos")
+/**
+ * this table used for files storage in Room db
+ * */
+@Entity(tableName = "files")
 data class FilesDownloading(
     @PrimaryKey(autoGenerate = true) val vId: Int,
     @ColumnInfo(name = "downloadId") val downloadId: String,

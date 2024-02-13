@@ -12,7 +12,6 @@ import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -25,8 +24,10 @@ import com.downloaddemo.fetch.fetchmain.Download
 import com.downloaddemo.fetch.fetchmain.Fetch
 import com.downloaddemo.fetch.fetchmain.Request
 import com.downloaddemo.room_database.AppDatabase
+import com.downloaddemo.utils.AppConstants
+import com.downloaddemo.utils.getMimeType
 import com.downloaddemo.utils.isAboveAndroid12
-import java.io.File
+
 
 class MultipleDownloadAdapter(
     var context: Context,
@@ -40,6 +41,9 @@ class MultipleDownloadAdapter(
     val onCancelDownloadClicked: (position: Int) -> Unit,
     val onPermissionNotGranted: (position: Int) -> Unit,
 ) : RecyclerView.Adapter<MultipleDownloadAdapter.ViewHolder>() {
+
+    val notificationManager: NotificationManager =
+        context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     class ViewHolder(
         val binding: ItemMultipleDownloadBinding
@@ -63,17 +67,17 @@ class MultipleDownloadAdapter(
         holder.binding.circularProgress.setProgress(downloadList[position].downloadProgress, true)
 
         if (downloadList[position].downloadProgress == 100) {
-                holder.binding.startDownload.text = "Downloaded"
-                holder.binding.cancelDownload.visibility = View.GONE
-                holder.binding.pauseDownload.visibility = View.GONE
-                holder.binding.resumeDownload.visibility = View.GONE
-                holder.binding.startDownload.visibility = View.VISIBLE
-                holder.binding.startDownload.isClickable = false
+            holder.binding.startDownload.text = "Downloaded"
+            holder.binding.cancelDownload.visibility = View.GONE
+            holder.binding.pauseDownload.visibility = View.GONE
+            holder.binding.resumeDownload.visibility = View.GONE
+            holder.binding.startDownload.visibility = View.VISIBLE
+            holder.binding.startDownload.isClickable = false
         }
 
 
-
-        if( downloadList[position].downloading) {
+        if (downloadList[position].downloading) {
+            //generateNotification(position)
             if (downloadList[position].downloadProgress > -1) {
                 holder.binding.tvProgress.text = downloadList[position].downloadProgress.toString()
                 appDatabase.filesDao().updateFilePrg(
@@ -89,23 +93,23 @@ class MultipleDownloadAdapter(
                         holder.binding.startDownload.visibility = View.VISIBLE
                         holder.binding.startDownload.isClickable = false
 
-                        generateNotification(position)
-
                         fetch.removeFetchObserversForDownload(
                             requestList[position].id,
                         )
 
-
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
-                }else{
-                    if(downloadList[position].cancelled){
+                } else {
+                    if (downloadList[position].cancelled) {
                         holder.binding.cancelDownload.visibility = View.GONE
                         holder.binding.pauseDownload.visibility = View.GONE
                         holder.binding.resumeDownload.visibility = View.GONE
+                        holder.binding.linearProgress.visibility = View.GONE
+                        holder.binding.circularProgress.visibility = View.GONE
+                        holder.binding.tvProgress.visibility = View.GONE
                         holder.binding.startDownload.visibility = View.VISIBLE
-                    }else {
+                    } else {
                         if (downloadList[position].paused) {
                             holder.binding.pauseDownload.visibility = View.GONE
                             holder.binding.resumeDownload.visibility = View.VISIBLE
@@ -113,7 +117,6 @@ class MultipleDownloadAdapter(
                             holder.binding.pauseDownload.visibility = View.VISIBLE
                             holder.binding.resumeDownload.visibility = View.GONE
                         }
-
                         holder.binding.startDownload.visibility = View.GONE
                         holder.binding.cancelDownload.visibility = View.VISIBLE
                         holder.binding.linearProgress.visibility = View.VISIBLE
@@ -124,24 +127,25 @@ class MultipleDownloadAdapter(
             } else {
                 holder.binding.tvProgress.text = "0"
             }
-
-            if (downloadList[position].downloadError) {
-                downloadList[position].downloading = false
-                // resetDownloadTimer()
-                Toast.makeText(context, "Error while downloading", Toast.LENGTH_SHORT).show()
-                holder.binding.resumeDownload.visibility = View.GONE
-                holder.binding.pauseDownload.visibility = View.GONE
-                holder.binding.linearProgress.visibility = View.GONE
-                holder.binding.circularProgress.visibility = View.GONE
-                holder.binding.tvProgress.visibility = View.GONE
-                holder.binding.startDownload.visibility = View.VISIBLE
-                holder.binding.startDownload.text = "Start"
-                holder.binding.linearProgress.progress = 0
-                holder.binding.circularProgress.progress = 0
-                holder.binding.tvProgress.text = ""
-                appDatabase.filesDao().deleteFile(downloadList[position].downloadId)
-            }
         }
+        if (downloadList[position].downloadError) {
+            downloadList[position].downloading = false
+            // resetDownloadTimer()
+            //   Toast.makeText(context, "Error while downloading", Toast.LENGTH_SHORT).show()
+            holder.binding.resumeDownload.visibility = View.GONE
+            holder.binding.cancelDownload.visibility = View.GONE
+            holder.binding.pauseDownload.visibility = View.GONE
+            holder.binding.linearProgress.visibility = View.GONE
+            holder.binding.circularProgress.visibility = View.GONE
+            holder.binding.tvProgress.visibility = View.GONE
+            holder.binding.startDownload.visibility = View.VISIBLE
+            holder.binding.startDownload.text = "Start"
+            holder.binding.linearProgress.progress = 0
+            holder.binding.circularProgress.progress = 0
+            holder.binding.tvProgress.text = ""
+            appDatabase.filesDao().deleteFile(downloadList[position].downloadId)
+        }
+
         holder.binding.startDownload.setOnClickListener {
 
             if (!isAboveAndroid12()) {
@@ -152,6 +156,8 @@ class MultipleDownloadAdapter(
                     onPermissionNotGranted(position)
                     return@setOnClickListener
                 } else {
+                    downloadList[position].paused = false
+                    downloadList[position].cancelled = false
                     holder.binding.startDownload.visibility = View.GONE
                     holder.binding.pauseDownload.visibility = View.VISIBLE
                     holder.binding.cancelDownload.visibility = View.VISIBLE
@@ -165,6 +171,10 @@ class MultipleDownloadAdapter(
         }
 
         holder.binding.pauseDownload.setOnClickListener {
+            appDatabase.filesDao().updateFileDownloadStatus(
+               AppConstants.File_DOWNLOAD_PAUSED,
+                downloadList[position].downloadId
+            )
             downloadList[position].paused = true
             downloadList[position].downloading = false
             downloadList[position].cancelled = false
@@ -174,8 +184,13 @@ class MultipleDownloadAdapter(
         }
 
         holder.binding.resumeDownload.setOnClickListener {
+            appDatabase.filesDao().updateFileDownloadStatus(
+                AppConstants.File_DOWNLOADING,
+                downloadList[position].downloadId
+            )
             downloadList[position].paused = false
             downloadList[position].cancelled = false
+            downloadList[position].downloading = true
             holder.binding.resumeDownload.visibility = View.GONE
             holder.binding.pauseDownload.visibility = View.VISIBLE
             onResumeDownloadClicked(position)
@@ -184,6 +199,7 @@ class MultipleDownloadAdapter(
         holder.binding.cancelDownload.setOnClickListener {
             downloadList[position].cancelled = true
             downloadList[position].downloading = false
+            downloadList[position].paused = false
             holder.binding.cancelDownload.visibility = View.GONE
             holder.binding.resumeDownload.visibility = View.GONE
             holder.binding.pauseDownload.visibility = View.GONE
@@ -201,7 +217,6 @@ class MultipleDownloadAdapter(
     }
 
 
-
     fun updateDownloadProgress(data: Download, reason: Reason, downloadPosition: Int) {
         downloadList[downloadPosition].downloadProgress = data.progress
         downloadList[downloadPosition].downloading = true
@@ -210,66 +225,7 @@ class MultipleDownloadAdapter(
         notifyItemChanged(downloadPosition)
     }
 
-    private fun generateNotification(position: Int) {
-        val intent: Intent
-        var fileNameWithPath =
-            context.externalCacheDir!!.path + "/Videos/" + Data.getNameFromUrl(downloadList[position].downloadUrl)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            intent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse(fileNameWithPath)
-                type = "application/pdf"
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-        } else {
-            intent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse(fileNameWithPath)
-                type = "application/pdf"
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-        }
 
-        // Push logic
-        val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent,
-            PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val builder = NotificationCompat.Builder(context, "CHANNEL_ID")
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Downloaded")
-            .setContentText(Data.getNameFromUrl(Data.sampleDownloadList[position].downloadUrl))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                "CHANNEL_ID", "Channel 1",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = ""
-            }
-            // Register the channel with the system
-            val notificationManager: NotificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return
-        }
-        NotificationManagerCompat.from(context).notify(1, builder.build())
-    }
 
 }

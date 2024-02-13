@@ -6,6 +6,10 @@ import android.os.Environment
 
 class Data {
     companion object {
+
+        /**
+         * this array used for single download
+        * */
         val sampleUrls = arrayOf(
             "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
             "http://speedtest.ftp.otenet.gr/files/test100Mb.db",
@@ -22,10 +26,16 @@ class Data {
                 .toString() + "/fetch"
         }
 
+        /**
+         * this method used to get the filename from full URL
+         * */
         fun getNameFromUrl(url: String?): String? {
             return Uri.parse(url).lastPathSegment
         }
 
+        /**
+         * this array used for multiple download
+         * */
         val sampleDownloadList:Array<DownloadData> = arrayOf(
             DownloadData(
                 "1",

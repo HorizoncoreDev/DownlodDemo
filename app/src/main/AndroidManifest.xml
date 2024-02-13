@@ -29,6 +29,17 @@
         </activity>
         <activity android:name=".SingleDownloadActivity"/>
         <activity android:name=".MultipleDownloadActivity"/>
+
+        <!--download receiver for notification click-->
+        <receiver android:name=".DownloadReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="PAUSE_DOWNLOAD_ACTION" />
+                <action android:name="RESUME_DOWNLOAD_ACTION" />
+                <action android:name="CANCEL_DOWNLOAD_ACTION" />
+                <!-- Add more actions if needed -->
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

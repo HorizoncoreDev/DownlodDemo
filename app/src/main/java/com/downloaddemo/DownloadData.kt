@@ -1,5 +1,8 @@
 package com.downloaddemo
 
+/**
+ * this class used for Multiple download list
+ * */
 class DownloadData (
       var downloadId:String,
       var downloadUrl:String,
