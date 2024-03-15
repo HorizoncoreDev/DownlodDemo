@@ -166,6 +166,16 @@ class MultipleDownloadAdapter(
                     holder.binding.tvProgress.visibility = View.VISIBLE
                     onStartDownloadClicked(position)
                 }
+            }else{
+                downloadList[position].paused = false
+                downloadList[position].cancelled = false
+                holder.binding.startDownload.visibility = View.GONE
+                holder.binding.pauseDownload.visibility = View.VISIBLE
+                holder.binding.cancelDownload.visibility = View.VISIBLE
+                holder.binding.linearProgress.visibility = View.VISIBLE
+                holder.binding.circularProgress.visibility = View.VISIBLE
+                holder.binding.tvProgress.visibility = View.VISIBLE
+                onStartDownloadClicked(position)
             }
 
         }

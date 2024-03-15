@@ -72,7 +72,7 @@ class MultipleDownloadActivity : AppCompatActivity(), FetchObserver<Download>, D
         }
 
         override fun onDeleted(download: Download) {
-            Log.e(TAG, "onDeleted: " + download.toString())
+            Log.e(TAG, "onDeleted: $download")
         }
     }
 
@@ -151,7 +151,6 @@ class MultipleDownloadActivity : AppCompatActivity(), FetchObserver<Download>, D
                                 this.externalCacheDir!!.path + "/Videos/" + Data.getNameFromUrl(
                                     downloadList[i].downloadUrl
                                 )
-
 
                             when (file.downloadPrg) {
                                 in 0..99 -> {

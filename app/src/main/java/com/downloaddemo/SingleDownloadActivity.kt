@@ -164,7 +164,7 @@ class SingleDownloadActivity : AppCompatActivity(), FetchObserver<Download>, Dow
                             .enqueue(request!!, { result: Request ->
                                 request = result
                             }) {
-                                Log.e(TAG, "enqueueDownload:Error " + it.toString())
+                                Log.e(TAG, "enqueueDownload:Error $it")
                             }
                         if (file.downloadStatus == AppConstants.File_DOWNLOAD_PAUSED) {
                             fetch!!.pause(request!!.id)
@@ -200,6 +200,8 @@ class SingleDownloadActivity : AppCompatActivity(), FetchObserver<Download>, Dow
                     } else {
                         enqueueDownload()
                     }
+                }else{
+                    enqueueDownload()
                 }
             }
 
@@ -374,7 +376,7 @@ class SingleDownloadActivity : AppCompatActivity(), FetchObserver<Download>, Dow
                 binding.circularProgress.visibility = View.VISIBLE
                 binding.tvProgress.visibility = View.VISIBLE
             }) {
-                Log.e(TAG, "enqueueDownload:Error " + it.toString())
+                Log.e(TAG, "enqueueDownload:Error $it")
             }
 
     }
